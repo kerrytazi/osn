@@ -1,0 +1,12 @@
+{
+	"folders": [
+		{
+			"path": ".."
+		}
+	],
+	"settings": {
+		"editor.formatOnSave": true,
+		"rust-analyzer.cargo.target": "machines/x86-64/x86-64.json",
+		"rust-analyzer.checkOnSave.allTargets": false
+	}
+}
