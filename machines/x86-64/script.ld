@@ -1,7 +1,4 @@
-/*OUTPUT_FORMAT(binary)*/
 ENTRY(_boot_start)
-
-INPUT("target/x86-64/bootloader/bootloader.o")
 
 SECTIONS {
 	. = 0x7C00;

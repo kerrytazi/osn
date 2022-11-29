@@ -1,10 +1,6 @@
 
 # Prepare
 
-## Install yasm
-
-[Yasm Downloads](https://yasm.tortall.net/Download.html) or [Direct link](http://www.tortall.net/projects/yasm/releases/yasm-1.3.0-win64.exe)
-
 ## Install binutils
 
 ```
@@ -18,7 +14,6 @@ $ rustup component add llvm-tools-preview
 
 # Quick debug build
 ```
-$ machines\x86-64\compile_bootloader.bat
 $ cargo build
 $ rust-objcopy --output-target binary target\x86-64\debug\osn target\x86-64\debug\osn.bin
 ```
