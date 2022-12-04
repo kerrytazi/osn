@@ -4,3 +4,11 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+
+[profile.release]
+debug = true
+
+[profile.release-lto]
+inherits = "release"
+lto = true
+codegen-units = 1

@@ -14,7 +14,7 @@
 	"linker": "rust-lld",
 	"pre-link-args": {
 		"ld.lld": [
-			"--script=machines/x86-64/script.ld"
+			"--script=machines/x86_64/script.ld"
 		]
 	}
 }

@@ -1,0 +1,29 @@
+{
+	"version": "0.2.0",
+	"configurations": [
+		{
+			"name": "LLDB Debug x86_64",
+			"type": "lldb",
+			"preLaunchTask": "QEMU debug x86_64",
+			"request": "custom",
+			"targetCreateCommands": [
+				"target create ${workspaceFolder}/target/x86_64/debug/osn"
+			],
+			"processCreateCommands": [
+				"gdb-remote 127.0.0.1:2345"
+			],
+		},
+		{
+			"name": "LLDB Release-LTO x86_64",
+			"type": "lldb",
+			"preLaunchTask": "QEMU release-lto x86_64",
+			"request": "custom",
+			"targetCreateCommands": [
+				"target create ${workspaceFolder}/target/x86_64/release-lto/osn"
+			],
+			"processCreateCommands": [
+				"gdb-remote 127.0.0.1:2345"
+			],
+		},
+	]
+}

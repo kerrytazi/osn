@@ -1,9 +1,0 @@
-[target.'cfg(target_os = "none")']
-runner = "machines/x86-64/debug_boot.bat"
-
-[build]
-target = "machines/x86-64/x86-64.json"
-
-[unstable]
-build-std-features = ["compiler-builtins-mem"]
-build-std = ["core", "compiler_builtins"]

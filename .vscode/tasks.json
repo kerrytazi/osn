@@ -1,0 +1,147 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		///////////
+		// DEBUG //
+		///////////
+		{
+			"label": "Build debug x86_64",
+			"group": "build",
+			"command": "cargo",
+			"args": [
+				"+nightly",
+				"build",
+				"--target",
+				"machines/x86_64/x86_64.json",
+				"-Z",
+				"build-std=core,compiler_builtins,panic_abort",
+				"-Z",
+				"build-std-features=compiler-builtins-mem,panic_immediate_abort",
+			],
+		},
+		{
+			"label": "Compose debug x86_64",
+			"group": "build",
+			"dependsOn": [
+				"Build debug x86_64",
+			],
+			"command": "rust-objcopy",
+			"args": [
+				"--output-target",
+				"binary",
+				"target/x86_64/debug/osn",
+				"target/x86_64/debug/osn.bin",
+			],
+		},
+		{
+			"label": "QEMU debug x86_64",
+			"group": "build",
+			"dependsOn": [
+				"Compose debug x86_64",
+			],
+			"isBackground": true,
+			"command": "qemu-system-x86_64",
+			"args": [
+				"-drive",
+				"file=target/x86_64/debug/osn.bin,format=raw,index=0,media=disk",
+				"-S",
+				"-gdb",
+				"tcp::2345",
+			],
+			"problemMatcher": [
+				{
+					"pattern": [
+						{
+							"regexp": ".",
+							"file": 1,
+							"line": 1,
+							"column": 1,
+							"message": 1
+						}
+					],
+					"background": {
+						"activeOnStart": true,
+						"beginsPattern": {
+							"regexp": "."
+						},
+						"endsPattern": {
+							"regexp": "."
+						}
+					},
+				},
+			],
+		},
+		/////////////////
+		// RELEASE-LTO //
+		/////////////////
+		{
+			"label": "Build release-lto x86_64",
+			"group": "build",
+			"command": "cargo",
+			"args": [
+				"+nightly",
+				"build",
+				"--target",
+				"machines/x86_64/x86_64.json",
+				"-Z",
+				"build-std=core,compiler_builtins,panic_abort",
+				"-Z",
+				"build-std-features=compiler-builtins-mem,panic_immediate_abort",
+				"--profile",
+				"release-lto",
+			],
+		},
+		{
+			"label": "Compose release-lto x86_64",
+			"group": "build",
+			"dependsOn": [
+				"Build release-lto x86_64",
+			],
+			"command": "rust-objcopy",
+			"args": [
+				"--output-target",
+				"binary",
+				"target/x86_64/release-lto/osn",
+				"target/x86_64/release-lto/osn.bin",
+			],
+		},
+		{
+			"label": "QEMU release-lto x86_64",
+			"group": "build",
+			"dependsOn": [
+				"Compose release-lto x86_64",
+			],
+			"isBackground": true,
+			"command": "qemu-system-x86_64",
+			"args": [
+				"-drive",
+				"file=target/x86_64/release-lto/osn.bin,format=raw,index=0,media=disk",
+				"-S",
+				"-gdb",
+				"tcp::2345",
+			],
+			"problemMatcher": [
+				{
+					"pattern": [
+						{
+							"regexp": ".",
+							"file": 1,
+							"line": 1,
+							"column": 1,
+							"message": 1
+						}
+					],
+					"background": {
+						"activeOnStart": true,
+						"beginsPattern": {
+							"regexp": "."
+						},
+						"endsPattern": {
+							"regexp": "."
+						}
+					},
+				},
+			],
+		},
+	],
+}
