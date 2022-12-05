@@ -16,6 +16,7 @@ fn get_screen_buffer() -> &'static mut [[u8; 2]] {
 	}
 }
 
+// TODO: bitflags
 #[allow(dead_code)]
 pub mod color {
 	pub mod foreground {
@@ -78,6 +79,8 @@ pub fn init() {
 		WAS = true;
 	}
 
+	// TODO: VGA requires enabling
+
 	clear_screen();
 	set_cursor_pos(0);
 }
@@ -88,10 +91,14 @@ pub fn set_cursor_pos(pos: u16) {
 	let pos_bytes = pos.to_ne_bytes();
 
 	unsafe {
-		super::io::outb(0x3D4, 0x0F);
-		super::io::outb(0x3D5, pos_bytes[0]);
-		super::io::outb(0x3D4, 0x0E);
-		super::io::outb(0x3D5, pos_bytes[1]);
+		super::io::port::outb(0x3D4, 0x0F);
+		super::io::port::outb(0x3D5, pos_bytes[0]);
+		super::io::port::outb(0x3D4, 0x0E);
+		super::io::port::outb(0x3D5, pos_bytes[1]);
+	}
+
+	unsafe {
+		CURRENT_VGA_POS = pos;
 	}
 }
 

@@ -19,7 +19,7 @@ SECTIONS {
 	.kernel : {
 		_part_kernel_begin = .;
 
-		*(.text* .rodata* .data*)
+		*(.text* .rodata* .data* .got* .bss*)
 
 		. = ALIGN(512);
 

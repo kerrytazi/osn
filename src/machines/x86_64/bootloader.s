@@ -141,7 +141,7 @@ err_32:
 .section .boot.64, "ax", %progbits
 .code64
 next64:
-	jmp kernel_main
+	jmp kmain
 
 .section .boot.data, "aw", %progbits
 	boot_disk_number: .byte 0
