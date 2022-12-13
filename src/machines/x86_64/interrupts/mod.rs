@@ -1,3 +1,63 @@
+use super::io::port::{inb, io_wait, outb};
+
+#[allow(dead_code)]
+mod consts {
+	pub const PIC1: u16 = 0x20; // IO base address for master PIC
+	pub const PIC2: u16 = 0xA0; // IO base address for slave PIC
+	pub const PIC1_COMMAND: u16 = PIC1;
+	pub const PIC1_DATA: u16 = PIC1 + 1;
+	pub const PIC2_COMMAND: u16 = PIC2;
+	pub const PIC2_DATA: u16 = PIC2 + 1;
+
+	pub const PIC_EOI: u8 = 0x20;
+
+	pub const ICW1_ICW4: u8 = 0x01; // ICW4 (not) needed
+	pub const ICW1_SINGLE: u8 = 0x02; // Single (cascade) mode
+	pub const ICW1_INTERVAL4: u8 = 0x04; // Call address interval 4 (8)
+	pub const ICW1_LEVEL: u8 = 0x08; // Level triggered (edge) mode
+	pub const ICW1_INIT: u8 = 0x10; // Initialization - required!
+
+	pub const ICW4_8086: u8 = 0x01; // 8086/88 (MCS-80/85) mode
+	pub const ICW4_AUTO: u8 = 0x02; // Auto (normal) EOI
+	pub const ICW4_BUF_SLAVE: u8 = 0x08; // Buffered mode/slave
+	pub const ICW4_BUF_MASTER: u8 = 0x0C; // Buffered mode/master
+	pub const ICW4_SFNM: u8 = 0x10; // Special fully nested (not)
+}
+
+unsafe fn end_of_interrupt(irq: u8) {
+	if irq >= 8 {
+		outb(consts::PIC2_COMMAND, consts::PIC_EOI);
+	}
+
+	outb(consts::PIC1_COMMAND, consts::PIC_EOI);
+}
+
+unsafe fn remap_pic(offset1: u8, offset2: u8) {
+	let prev_pic1_data = inb(consts::PIC1_DATA); // save masks
+	let prev_pic2_data = inb(consts::PIC2_DATA);
+
+	outb(consts::PIC1_COMMAND, consts::ICW1_INIT | consts::ICW1_ICW4); // starts the initialization sequence (in cascade mode)
+	io_wait();
+	outb(consts::PIC2_COMMAND, consts::ICW1_INIT | consts::ICW1_ICW4);
+	io_wait();
+	outb(consts::PIC1_DATA, offset1); // ICW2: Master PIC vector offset
+	io_wait();
+	outb(consts::PIC2_DATA, offset2); // ICW2: Slave PIC vector offset
+	io_wait();
+	outb(consts::PIC1_DATA, 4); // ICW3: tell Master PIC that there is a slave PIC at IRQ2 (0000 0100)
+	io_wait();
+	outb(consts::PIC2_DATA, 2); // ICW3: tell Slave PIC its cascade identity (0000 0010)
+	io_wait();
+
+	outb(consts::PIC1_DATA, consts::ICW4_8086);
+	io_wait();
+	outb(consts::PIC2_DATA, consts::ICW4_8086);
+	io_wait();
+
+	outb(consts::PIC1_DATA, prev_pic1_data); // restore saved masks.
+	outb(consts::PIC2_DATA, prev_pic2_data);
+}
+
 #[repr(C, packed)]
 #[derive(Copy, Clone, Eq, PartialEq)]
 struct InterruptDescriptor {
@@ -56,16 +116,32 @@ static g_IDTDescriptor: InterruptDescriptorTableDescriptor = InterruptDescriptor
 
 // #[target_feature(enable = "sse")]
 #[no_mangle]
-extern "x86-interrupt" fn kisr1() {
-	let code = unsafe { super::io::port::inb(0x60) };
+unsafe extern "x86-interrupt" fn kisr1() {
+	use super::keyboard::scancodes1 as sc1;
+
+	let scan = inb(0x60);
+
+	let sc1::ScanToKeyResult { key, pressed } = sc1::scan_to_key(scan);
 
 	super::vga::print_str(b"kisr1: ");
-	super::vga::print_str(&[code]);
 
-	unsafe {
-		super::io::port::outb(0x20, 0x20);
-		super::io::port::outb(0xA0, 0x20);
+	if key == sc1::Key::Invalid {
+		super::vga::print_str(b"invalid");
+	} else {
+		if pressed {
+			super::vga::print_str(b"pressed: ");
+		} else {
+			super::vga::print_str(b"unpressed: ");
+		}
+
+		let shift_pressed = false; // TODO
+
+		super::vga::print_str(&[sc1::key_to_ascii(key, shift_pressed)]);
 	}
+
+	super::vga::print_str(b"   ");
+
+	end_of_interrupt(1);
 }
 
 #[allow(dead_code)]
@@ -92,15 +168,15 @@ mod attribute_type {
 
 pub fn init() {
 	unsafe {
-		for descriptor in INTERRUPT_DESCRIPTOR_TABLE.iter_mut() {
-			descriptor.init(
-				kisr1,
-				attribute_type::gate::INTERRUPT | attribute_type::PRESENT_BIT,
-			);
-		}
+		INTERRUPT_DESCRIPTOR_TABLE[1].init(
+			kisr1,
+			attribute_type::gate::INTERRUPT | attribute_type::PRESENT_BIT,
+		);
 
-		super::io::port::outb(0x21, 0xFD);
-		super::io::port::outb(0xA1, 0xFF);
+		remap_pic(0, 8);
+
+		outb(0x21, 0xFD);
+		outb(0xA1, 0xFF);
 
 		load_idt(&g_IDTDescriptor);
 		enable();

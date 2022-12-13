@@ -141,6 +141,16 @@ err_32:
 .section .boot.64, "ax", %progbits
 .code64
 next64:
+	// Enable SSE
+	movq %cr0, %rax
+	// andw ax, 0xFFFB		// clear coprocessor emulation CR0.EM
+	orq $0x2, %rax			// set coprocessor monitoring  CR0.MP
+	movq %rax, %cr0
+	movq %cr4, %rax
+	orq $(3 << 9), %rax		// set CR4.OSFXSR and CR4.OSXMMEXCPT at the same time
+	movq %rax, %cr4
+
+	// Run rust code
 	jmp kmain
 
 .section .boot.data, "aw", %progbits
